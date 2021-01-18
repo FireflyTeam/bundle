@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import os
+import sys
+
+bundle_list = []
+bundle_active_list = []
+
+BUNDLE_BRANCH=sys.argv[1]
+BUNDLE_PATH=os.path.dirname(__file__)
+BUNDLE_EXT_NAME='.bundle'
+BUNDLE_EXT_INDEX=-1*len(BUNDLE_EXT_NAME)
+
+print('[Info]Update Bundle repo...')
+os.system('git -C %s pull origin %s:%s > /dev/null' % (BUNDLE_PATH, BUNDLE_BRANCH, BUNDLE_BRANCH))
+os.system('git -C %s reset --hard > /dev/null' % (BUNDLE_PATH))
+os.system('git -C %s checkout %s > /dev/null' % (BUNDLE_PATH, BUNDLE_BRANCH))
+print("-------------------------------------------")
+
+for filename in os.listdir(BUNDLE_PATH):
+    if filename.endswith(BUNDLE_EXT_NAME):
+        bundle_list.append(filename)
+
+bundle_list.sort(key= lambda x:int(x[:BUNDLE_EXT_INDEX]), reverse=True)
+#print bundle_list
+
+for b in bundle_list:
+    bundle_active_list.append(b)
+    ret=os.system('git bundle verify %s/%s > /dev/null 2>&1' % (BUNDLE_PATH, b))
+    if 0 == ret:
+        break
+
+bundle_active_list.reverse()
+#print(bundle_active_list)
+
+if len(bundle_active_list) == 0:
+    print('[Info]Already up to date!')
+else:
+    print('[Info]Update to FETCH_HEAD:')
+    for b in bundle_active_list:
+        ret=os.system('git fetch %s/%s > /dev/null' % (BUNDLE_PATH, b))
+        if 0 != ret:
+            print("[ERROR]Fetch %s/%s error!!" % (BUNDLE_PATH, b))
+        else:
+            print("[Info]Fetch %s/%s successfully!!" % (BUNDLE_PATH, b))
+
